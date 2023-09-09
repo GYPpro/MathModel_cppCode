@@ -58,20 +58,20 @@ int GetNext_Ship(ld deepth,int idx)// 基于测线左端点的深度和测线左
     return idx + length2idx(length);
 }
 
-int GetNext_SoundingAreaEdge(int idx,vector<ld> &SoundingAreaEdge)// 基于船的坐标，计算测线右端点的坐标
+int GetNext_SoundingAreaEdge(int idx,vector<ld> &SoundingEdgeArea)// 基于船的坐标，计算测线右端点的坐标
 {
-    if(idx > SoundingAreaEdge.size() - 1)
-        return SoundingAreaEdge.size() - 1;
+    if(idx > SoundingEdgeArea.size() - 1)
+        return SoundingEdgeArea.size() - 1;
 
     ll addLengthIdx = 0;
     // 以DIFF为单位递增Length，直到Length对应的测线与海底相交
-    for(;idx + addLengthIdx < SoundingAreaEdge.size();addLengthIdx++)
-        if(SoundingAreaEdge[idx + addLengthIdx] < addLengthIdx * Diff * tan(Deg2Rad(30)))
+    for(;idx + addLengthIdx < SoundingEdgeArea.size();addLengthIdx++)
+        if(SoundingEdgeArea[idx + addLengthIdx] < addLengthIdx * Diff * tan(Deg2Rad(30)))
             return idx + addLengthIdx;
-    return SoundingAreaEdge.size() - 1;
+    return SoundingEdgeArea.size() - 1;
 }
 
-int GetLast_SoundingAreaEdge(int idx,vector<ld> &SoundingAreaEdge)// 基于船的坐标，计算测线左端点的坐标
+int GetLast_SoundingAreaEdge(int idx,vector<ld> &SoundingEdgeArea)// 基于船的坐标，计算测线左端点的坐标
 {
     if(idx < 0)
         return 0;
@@ -79,12 +79,12 @@ int GetLast_SoundingAreaEdge(int idx,vector<ld> &SoundingAreaEdge)// 基于船�
     ll addLengthIdx = 0;
     // 以DIFF为单位递增Length，直到Length对应的测线与海底相交
     for(;idx - addLengthIdx >= 0;addLengthIdx++)
-        if(SoundingAreaEdge[idx - addLengthIdx] < addLengthIdx * Diff * tan(Deg2Rad(30)))
+        if(SoundingEdgeArea[idx - addLengthIdx] < addLengthIdx * Diff * tan(Deg2Rad(30)))
             return idx - addLengthIdx;
     return 0;
 }
 
-ld GetW(int r,int l,vector<ld> &OceanDeepth)//求用于计算重叠率的海床长度W
+ld GetW(int l,int r,vector<ld> &OceanDeepth)//求用于计算重叠率的海床长度W
 {
     ld W = 0;
     for(int i = l;i < r;i++)
@@ -117,7 +117,7 @@ int main()
     ll SubdivNum_W = (ll)ceil(OceanWidth / Diff) +1;
     vector<vector<ld>> OceanDeepth_T(SubdivNum_L_I+10, vector<ld>(SubdivNum_W+10, 0));
     
-    vector<ld> SoundingAreaEdge(SubdivNum_L+10, 0);
+    vector<ld> SoundingEdgeArea(SubdivNum_L+10, 0);
     vector<int> ShipLocation(SubdivNum_L+10,0);
 
     //对原海底深度数据做插值，得到以Diff为单位的海底深度矩阵，并销毁多余数据
@@ -167,14 +167,14 @@ int main()
         if(outputflag) cout << endl;
 
         if(outputflag)
-            cout << "SoundingAreaEdge: ";
+            cout << "SoundingEdgeArea: ";
         for(int i = 0;i < SubdivNum_L;i++)
             if(outputflag)
-                cout << SoundingAreaEdge[i] << " ";
+                cout << SoundingEdgeArea[i] << " ";
         if(outputflag) cout << endl;
 
         for(int i = 0;i < SubdivNum_L;i++)
-            ShipLocation[i] = GetNext_Ship(OceanDeepth[i][SoundingAreaEdge[i]],SoundingAreaEdge[i]);
+            ShipLocation[i] = GetNext_Ship(OceanDeepth[i][SoundingEdgeArea[i]],SoundingEdgeArea[i]);
         for(int i = 0;i < SubdivNum_L;i++)
             if(ShipLocation[i] < minShipLocation)
                 minShipLocation = ShipLocation[i];
@@ -192,18 +192,41 @@ int main()
         SoundingEdgeList.push_back(minShipLocation);
 
         for(int i = 0;i < SubdivNum_L;i++)
-            SoundingAreaEdge[i] = GetNext_SoundingAreaEdge(minShipLocation,OceanDeepth[i]);
+            SoundingEdgeArea[i] = GetNext_SoundingAreaEdge(minShipLocation,OceanDeepth[i]);
 
         for(int i = 0;i < SubdivNum_L;i++)
-            if(SoundingAreaEdge[i] < minSoundingAreaEdge)
-                minSoundingAreaEdge = SoundingAreaEdge[i];
+            if(SoundingEdgeArea[i] < minSoundingAreaEdge)
+                minSoundingAreaEdge = SoundingEdgeArea[i];
 
         if(minShipLocation >= SubdivNum_W-1 || minSoundingAreaEdge >= SubdivNum_W-1)
             break;
     }
 
+    //输出总长度
+    cout << "Total Length: " << SoundingEdgeList.size()*OceanLength << endl;
+
+    //输出每条测线的坐标
+    cout << "SoundingEdgeList: ";
     for(int i = 0;i < SoundingEdgeList.size();i++)
         cout << SoundingEdgeList[i] << " ";
+
+    //对每条测线统计重叠率并计算重叠率大于20的长度
+    ld OverlapLength = 0;
+    for(int i = 0;i < SoundingEdgeList.size()-1;i ++)
+    {
+        for(int j = 0;j < SubdivNum_L;j ++)
+        {
+            int idxl = GetLast_SoundingAreaEdge(SoundingEdgeList[i],OceanDeepth[j]),
+                idxr = GetNext_SoundingAreaEdge(SoundingEdgeList[i],OceanDeepth[j]);
+            ld W = idx2length(SoundingEdgeList[i+1]-SoundingEdgeList[i]);
+            if(idxl <= idxr)
+                W = GetW(idxl,idxr,OceanDeepth[j]);
+            if(idx2length(SoundingEdgeList[i+1]-SoundingEdgeList[i])/W < 0.8) OverlapLength += 1;
+            // else 
+            //     cout << "debug";
+        }
+    }
+    cout << endl << "OverlapLength: " << OverlapLength * Diff << endl;
 
     return 0;
 }
