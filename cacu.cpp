@@ -1,19 +1,12 @@
+#pragma GCC optimize(2)
+
 #include <iostream>
 #include <stdlib.h>
 #include <math.h>
 #include <vector>
-#include <myLib\myLib.h>
+#include "cacu.h"
 
 using namespace std;
-
-double Diff = 0.02;
-const double OceanLength = 5;
-const double OceanWidth = 4;
-const long double pi = 3.1415926535897932384626;
-const long double BeamAngel = 0.66666666666666666 * pi;
-
-#define ll long long
-#define ld double
 
 ld Rad2Deg(ld rad) // 弧度制转角度制
 {
@@ -95,7 +88,7 @@ ld GetW(int l,int r,vector<ld> &OceanDeepth)//求用于计算重叠率的海床�
 int main()
 {
     //打开文件
-    freopen("src\\cacu.in", "r", stdin);
+    freopen("cacu.in", "r", stdin);
 
     //申请并初始化原始海底深度矩阵
     ll SubdivNum_L_I = (ll)ceil(OceanLength / Diff) +1;
@@ -149,7 +142,7 @@ int main()
     //申请记录每条测线的数组
     vector<int> SoundingEdgeList;
 
-    freopen("src\\cacu.out", "w", stdout);
+    freopen("cacu.out", "w", stdout);
     //递推，计算每条测线
     for(;;)
     {
@@ -208,7 +201,7 @@ int main()
     //输出每条测线的坐标
     cout << "SoundingEdgeList: ";
     for(int i = 0;i < SoundingEdgeList.size();i++)
-        cout << SoundingEdgeList[i] << " ";
+        cout << idx2length(SoundingEdgeList[i]) << " ";
 
     //对每条测线统计重叠率并计算重叠率大于20的长度
     ld OverlapLength = 0;
